@@ -1,7 +1,8 @@
-import { BoardStatus, Cell, Player } from "../types";
+import { BoardStatus, Cell, Player, States } from "../types";
+import { CustomError } from "./CustomError";
 
 export class Board {
-  cells: Cell[];
+  cells: Cell[][];
   players: Player[] = [];
   private status: BoardStatus = BoardStatus.NOK;
 
@@ -10,46 +11,44 @@ export class Board {
   }
 
   private generateCells() {
-    const allCells: Cell[] = [];
-    let lineNumber = -1;
-    let cellNumber = 0;
+    const allCells: Cell[][] = [];
 
-    for (let i = 0; i < 42; i++) {
-      if (i % 7 === 0) {
-        lineNumber++;
-        cellNumber = 0;
+    for (let i = 0; i < 6; i++) {
+      const lineCells = [];
+      for (let y = 0; y < 7; y++) {
+        const cell: Cell = {
+          available: true,
+          playerId: null,
+        };
+        lineCells.push(cell);
       }
-
-      const cell: Cell = {
-        available: true,
-        playerId: null,
-        point: [lineNumber, cellNumber],
-      };
-      allCells.push(cell);
-      cellNumber++;
+      allCells.push(lineCells);
     }
+
     this.status = BoardStatus.OK;
     return allCells;
   }
 
   public addPlayer(player: Player) {
     if (this.players.length > 2)
-      throw new Error(
-        "Impossible d'ajouter le joueur, le nombre maximum de joueur sur une partie est de 2..."
+      throw new CustomError(
+        "Impossible d'ajouter le joueur, le nombre maximum de joueur sur une partie est de 2...",
+        401
       );
     this.players.push({ ...player, position: this.players.length + 1 });
   }
 
-  public updatePlayerStatus(id: string) {
-    const player = this.players.find((e) => e.id === id);
-
-    if (!player) throw new Error("L'utilisateur recherché n'existe pas...");
-
-    player.toPlay = !player.toPlay;
-
-    this.players.forEach((e) => {
-      if (e.id === id) e = player;
-    });
+  public updatePlayerStatus(state: States) {
+    switch (state) {
+      case States.PLAYER_ONE_PLAY:
+        this.players[0].toPlay = true;
+        this.players[1].toPlay = false;
+        break;
+      case States.PLAYER_TWO_PLAY:
+        this.players[0].toPlay = false;
+        this.players[1].toPlay = true;
+        break;
+    }
   }
 
   public getStatus() {
@@ -61,33 +60,88 @@ export class Board {
   }
 
   public getWinner(): Player | null {
-    return this.players[0];
+    // on gagne lorsque 4 jetons sont alignés (ligne, colonne ou diagonale)
+    let count = 0;
+    let player: string | null = null;
+    // on vérifie en ligne
+    this.cells.forEach((cell) => {
+      if (count === 4) return;
+      if (count !== 0) count = 0;
+      cell.forEach((curr, index) => {
+        if (count === 4) return;
+        if (curr.playerId && curr.playerId === cell[index + 1].playerId) {
+          if (count === 0) {
+            count += 2;
+          } else count++;
+          player = curr.playerId;
+        } else {
+          count = 0;
+          player = null;
+        }
+      });
+    });
+
+    // on vérifie en colonne
+
+    this.cells.forEach((cell, index) => {
+      if (count === 4) return;
+      if (count !== 0) count = 0;
+      if (
+        cell[index].playerId &&
+        this.cells[index + 1] &&
+        cell[index].playerId === this.cells[index + 1][index].playerId
+      ) {
+        if (count === 0) {
+          count += 2;
+        } else count++;
+        player = cell[index].playerId;
+      } else {
+        count = 0;
+        player = null;
+      }
+    });
+
+    // on vérifie en diagonale...
+    /*this.cells.forEach((cell, index) => {
+      if (count === 4) return;
+      if (count !== 0) count = 0;
+
+      if (
+        cell[index] &&
+        this.cells[index - 1] &&
+        index > 0 &&
+        cell[index].playerId &&
+        cell[index].playerId ===
+          (this.cells[index - 1][index - 1]?.playerId ||
+            this.cells[index - 1][index + 1]?.playerId ||
+            this.cells[index + 1][index - 1]?.playerId ||
+            this.cells[index + 1][index + 1]?.playerId)
+      ) {
+        console.log("true!");
+      }
+    });*/
+
+    return player ? this.players.find((e) => e.id === player)! : null;
   }
 
-  public addToken(playerId: string, posCell: [number, number]) {
+  public addToken(playerId: string, lineCell: number, posCell: number) {
     const player = this.players.find((e) => e.id === playerId);
 
     if (!player) {
-      throw new Error("Impossible de trouver le joueur demandé...");
+      throw new CustomError("Impossible de trouver le joueur demandé...", 404);
     }
 
     if (!player.toPlay)
-      throw new Error(
-        `Le joueur ${player.name} n'a pas le droit de jouer pour le moment...`
+      throw new CustomError(
+        `Le joueur ${player.name} n'a pas le droit de jouer pour le moment...`,
+        403
       );
 
-    // tslint:disable-next-line: prefer-for-of
-    for (let i = 0; i < this.cells.length; i++) {
-      const { point, available } = this.cells[i];
-
-      if (available && point[0] === posCell[0] && point[1] === posCell[1]) {
-        this.cells[i].playerId = player.id;
-
-        this.cells[i].available = false;
-
-        this.updatePlayerStatus(player.id);
-        break;
-      }
+    if (this.cells[lineCell][posCell].available) {
+      this.cells[lineCell][posCell].available = false;
+      this.cells[lineCell][posCell].playerId = player.id;
+    } else {
+      throw new CustomError("Cette case est déja prise...", 400);
     }
   }
 }

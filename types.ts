@@ -1,7 +1,6 @@
 export type Cell = {
   available: boolean;
   playerId: Player["id"] | null;
-  point: [number, number];
 };
 
 export type Player = {
@@ -18,10 +17,10 @@ export enum Color {
 }
 
 export enum BoardStatus {
-  OK,
-  NOK,
-  WAIT,
-  PLAY,
+  OK = "OK",
+  NOK = "NOK",
+  WAIT = "WAIT",
+  PLAY = "PLAY",
 }
 
 export enum States {
@@ -32,3 +31,11 @@ export enum States {
   DRAW = "DRAW",
   FINISH = "FINISH",
 }
+
+export type Game = {
+  status: BoardStatus;
+  players: Player[];
+  cells: Cell[][];
+  currentState: States;
+  winner: Player | null;
+};
