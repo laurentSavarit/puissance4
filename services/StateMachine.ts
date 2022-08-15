@@ -82,7 +82,7 @@ export class StateMachine extends Board {
         this.state = States.FINISH;
         break;
       case States.FINISH:
-        this.state = States.AWAIT_PLAYER;
+        //this.state = States.AWAIT_PLAYER;
         break;
     }
     return this.state;
