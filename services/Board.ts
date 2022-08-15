@@ -60,7 +60,7 @@ export class Board {
     return this.players.find((e) => e.toPlay);
   }
 
-  public getWinner(): Player | null {
+  public getWinner(): Player["id"] | null {
     // on gagne lorsque 4 jetons sont alignés (ligne, colonne ou diagonale)
 
     let player: string | null = null;
@@ -77,10 +77,17 @@ export class Board {
       });
     });
 
-    return player ? this.players.find((e) => e.id === player)! : null;
+    return player ? player : null;
   }
 
   public addToken(playerId: string, lineCell: number, posCell: number) {
+    if (lineCell < 0 || lineCell > 5 || posCell < 0 || posCell > 6) {
+      throw new CustomError(
+        "Le numéro de ligne doit être compris entre 0 et 5 (inclus) et le numéro de la cellule entre 0 et 6 (inclus)...",
+        400
+      );
+    }
+
     const player = this.players.find((e) => e.id === playerId);
 
     if (!player) {
@@ -141,7 +148,7 @@ export class Board {
           : false;
       });
 
-      return result.includes(false);
+      return !result.includes(false);
     });
 
     return win.includes(true);
@@ -151,5 +158,9 @@ export class Board {
     this.strokes = 0;
     this.players.length = 0;
     this.cells = this.generateCells();
+  }
+
+  public getStrokes() {
+    return this.strokes;
   }
 }

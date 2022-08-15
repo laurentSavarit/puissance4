@@ -35,7 +35,8 @@ export enum States {
 export type Game = {
   status: BoardStatus;
   players: Player[];
-  cells: Cell[][];
+  strokes: number;
   currentState: States;
-  winner: Player | null;
+  winner: Player["id"] | null;
+  playerToPlay: Player["id"] | undefined;
 };

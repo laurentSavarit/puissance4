@@ -29,6 +29,7 @@ export class StateMachine extends Board {
       this.goTo();
       return this.getGame();
     } catch (e: unknown) {
+      console.error(JSON.parse((e as Error).message));
       return e as CustomError;
     }
   }
@@ -38,13 +39,16 @@ export class StateMachine extends Board {
   }
 
   getGame(): Game {
-    return {
-      cells: this.cells,
+    const game = {
       players: this.players,
+      strokes: this.getStrokes(),
       currentState: this.state,
       status: this.getStatus(),
       winner: this.getWinner(),
+      playerToPlay: this.getWinner() ? undefined : this.getPlayerToPlay()?.id,
     };
+    console.log(game);
+    return game;
   }
 
   private goTo() {
@@ -82,7 +86,7 @@ export class StateMachine extends Board {
         this.state = States.FINISH;
         break;
       case States.FINISH:
-        //this.state = States.AWAIT_PLAYER;
+        console.log("GAME FINISH!!!!");
         break;
     }
     return this.state;
