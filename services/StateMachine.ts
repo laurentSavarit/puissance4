@@ -45,7 +45,11 @@ export class StateMachine extends Board {
       currentState: this.state,
       status: this.getStatus(),
       winner: this.getWinner(),
-      playerToPlay: this.getWinner() ? undefined : this.getPlayerToPlay()?.id,
+      playerToPlay: this.getWinner()
+        ? undefined
+        : this.state !== States.AWAIT_PLAYER
+        ? this.getPlayerToPlay()?.id
+        : undefined,
     };
     console.log(game);
     return game;

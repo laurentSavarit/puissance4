@@ -65,7 +65,6 @@ export class Board {
 
     let player: string | null = null;
 
-    // on vérifie en diagonale...
     this.cells.forEach((raw, indexRaw) => {
       raw.forEach((cell, indexCell) => {
         if (cell.available) return;
